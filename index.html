@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSE Pathway Finder — University of Westminster</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #00857C;
+    --teal-dark: #005F58;
+    --teal-light: #E6F5F3;
+    --teal-mid: #B2E0DB;
+    --charcoal: #1A1A2E;
+    --slate: #3D3D5C;
+    --muted: #6B6B8D;
+    --light-bg: #F7F8FC;
+    --white: #FFFFFF;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+    --radius: 16px;
+    --green: #2E7D32;
+    --amber: #E65100;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--light-bg); color: var(--charcoal); min-height: 100vh; overflow-x: hidden; }
+  .bg-pattern {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0;
+    background: radial-gradient(ellipse at 10% 20%, rgba(0,133,124,0.06) 0%, transparent 50%), radial-gradient(ellipse at 90% 80%, rgba(74,144,217,0.05) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(244,197,66,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .container { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 24px 20px 60px; }
+  .header { text-align: center; padding: 48px 0 40px; }
+  .header-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--teal); color: white; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 20px; border-radius: 100px; margin-bottom: 24px; }
+  .header h1 { font-family: 'Fraunces', serif; font-size: clamp(26px, 5.5vw, 42px); font-weight: 700; line-height: 1.2; color: var(--charcoal); margin-bottom: 16px; }
+  .header h1 em { font-style: italic; color: var(--teal); }
+  .header p { font-size: 17px; color: var(--muted); line-height: 1.6; max-width: 540px; margin: 0 auto; }
+  .progress-wrap { position: sticky; top: 0; z-index: 100; background: rgba(247,248,252,0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 16px 0 12px; margin-bottom: 8px; transition: box-shadow 0.3s; }
+  .progress-wrap.scrolled { box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+  .progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .progress-info span:first-child { color: var(--teal-dark); font-weight: 600; }
+  .progress-bar { height: 6px; background: var(--teal-mid); border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--teal-dark)); border-radius: 100px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
+  .question-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 36px 32px; margin-bottom: 20px; animation: fadeUp 0.5s ease both; border: 1px solid rgba(0,0,0,0.04); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .q-number { font-size: 12px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--teal); margin-bottom: 10px; }
+  .q-text { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; line-height: 1.4; color: var(--charcoal); margin-bottom: 28px; }
+  .q-subtext { font-size: 14px; color: var(--muted); margin-top: -20px; margin-bottom: 24px; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn { display: flex; align-items: flex-start; gap: 14px; background: var(--light-bg); border: 2px solid transparent; border-radius: 12px; padding: 16px 18px; cursor: pointer; transition: all 0.25s ease; text-align: left; font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.5; color: var(--slate); }
+  .option-btn:hover { border-color: var(--teal-mid); background: var(--teal-light); transform: translateX(4px); }
+  .option-btn.selected { border-color: var(--teal); background: var(--teal-light); color: var(--teal-dark); font-weight: 500; }
+  .option-letter { flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px; background: var(--white); border: 2px solid #DDD; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--muted); transition: all 0.25s ease; }
+  .option-btn.selected .option-letter { background: var(--teal); border-color: var(--teal); color: white; }
+  .option-btn:hover .option-letter { border-color: var(--teal-mid); }
+  .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; gap: 12px; }
+  .btn { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; border: none; border-radius: 12px; padding: 14px 28px; cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-back { background: transparent; color: var(--muted); padding: 14px 16px; }
+  .btn-back:hover { color: var(--charcoal); }
+  .btn-next { background: var(--teal); color: white; margin-left: auto; }
+  .btn-next:hover { background: var(--teal-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-submit { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: white; margin-left: auto; font-size: 16px; padding: 16px 36px; }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .results-section { display: none; animation: fadeUp 0.6s ease both; }
+  .results-header { text-align: center; margin-bottom: 36px; }
+  .results-header h2 { font-family: 'Fraunces', serif; font-size: clamp(26px, 5vw, 38px); font-weight: 700; margin-bottom: 12px; }
+  .results-header p { font-size: 16px; color: var(--muted); line-height: 1.6; }
+  .current-pathway-banner { background: var(--white); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; border: 1px solid rgba(0,0,0,0.06); text-align: center; }
+  .cpb-label { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .cpb-name { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
+  .cpb-match { display: inline-block; margin-top: 10px; padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 700; }
+  .cpb-match.great { background: #E8F5E9; color: var(--green); }
+  .cpb-match.consider { background: #FFF3E0; color: var(--amber); }
+  .result-card { background: var(--white); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: 20px; transition: all 0.3s ease; animation: fadeUp 0.5s ease both; }
+  .result-card:hover { box-shadow: var(--shadow-md); transform: translateX(4px); }
+  .result-card.top-match { background: linear-gradient(135deg, var(--teal-light), #E8F8F5); border: 2px solid var(--teal); box-shadow: var(--shadow-md); padding: 28px 28px; }
+  .result-card.is-current { border-left: 4px solid var(--teal); }
+  .result-rank { flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  .result-card.top-match .result-rank { background: var(--teal); color: white; width: 52px; height: 52px; font-size: 22px; border-radius: 14px; }
+  .result-card:not(.top-match) .result-rank { background: var(--light-bg); color: var(--muted); border: 2px solid #E8E8F0; }
+  .result-info { flex: 1; min-width: 0; }
+  .result-name { font-weight: 600; font-size: 17px; color: var(--charcoal); margin-bottom: 4px; }
+  .result-card.top-match .result-name { font-size: 20px; color: var(--teal-dark); }
+  .result-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .result-card.top-match .result-desc { font-size: 14px; }
+  .result-current-tag { display: inline-block; background: #E3F2FD; color: #1565C0; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+  .result-score-wrap { flex-shrink: 0; text-align: right; }
+  .result-percent { font-weight: 700; font-size: 22px; color: var(--teal); }
+  .result-card:not(.top-match) .result-percent { font-size: 18px; color: var(--slate); }
+  .result-bar-mini { width: 80px; height: 5px; background: #E8E8F0; border-radius: 100px; margin-top: 6px; overflow: hidden; }
+  .result-bar-fill { height: 100%; background: var(--teal); border-radius: 100px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+  .result-card:not(.top-match) .result-bar-fill { background: var(--teal-mid); }
+  .top-match-label { display: inline-block; background: var(--teal); color: white; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 100px; margin-bottom: 8px; }
+  .submit-box { background: var(--white); border-radius: var(--radius); padding: 28px; margin-top: 32px; box-shadow: var(--shadow-sm); text-align: center; border: 2px dashed var(--teal-mid); }
+  .submit-box h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .submit-box p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+  .btn-anon-submit { background: var(--teal); color: white; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; padding: 14px 32px; cursor: pointer; transition: all 0.25s ease; }
+  .btn-anon-submit:hover { background: var(--teal-dark); transform: translateY(-1px); }
+  .btn-anon-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .submit-status { margin-top: 12px; font-size: 14px; font-weight: 500; min-height: 20px; }
+  .submit-status.success { color: var(--green); }
+  .submit-status.error { color: var(--amber); }
+  .results-footer { text-align: center; margin-top: 24px; padding: 32px; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+  .results-footer p { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+  .btn-restart { background: var(--light-bg); color: var(--teal-dark); border: 2px solid var(--teal-mid); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 10px; cursor: pointer; transition: all 0.25s ease; }
+  .btn-restart:hover { background: var(--teal-light); border-color: var(--teal); }
+  .intro-section { text-align: center; padding: 60px 20px; }
+  .intro-icon { font-size: 56px; margin-bottom: 20px; }
+  .intro-section h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+  .intro-section p { font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 500px; margin: 0 auto 32px; }
+  .pathway-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 36px; }
+  .pathway-tag { background: var(--teal-light); color: var(--teal-dark); font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 100px; }
+  .btn-start { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: white; font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 600; padding: 18px 48px; border: none; border-radius: 14px; cursor: pointer; transition: all 0.3s ease; }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .hidden { display: none !important; }
+  @media (max-width: 600px) {
+    .container { padding: 16px 14px 48px; }
+    .question-card { padding: 24px 20px; }
+    .result-card { flex-wrap: wrap; gap: 12px; padding: 20px; }
+    .result-score-wrap { width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; }
+    .result-bar-mini { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div class="container">
+  <div class="header">
+    <div class="header-badge">🧭 CSE Pathway Finder</div>
+    <h1>Are you in the <em>right</em> CSE pathway? <br>Take the quiz to find out!</h1>
+    <p>Answer 13 quick questions about your interests, instincts and ambitions. We'll match you to the CSE pathway that fits you best.</p>
+  </div>
+
+  <div id="intro" class="intro-section">
+    <div class="intro-icon">🎯</div>
+    <h2>How it works</h2>
+    <p>First, tell us which pathway you're currently on. Then answer 12 questions — just go with your gut, there are no right or wrong answers! At the end you'll see all 9 pathways ranked by how well they match you.</p>
+    <div class="pathway-tags">
+      <span class="pathway-tag">Computer Science</span>
+      <span class="pathway-tag">Artificial Intelligence</span>
+      <span class="pathway-tag">Games Development</span>
+      <span class="pathway-tag">Creative Computing</span>
+      <span class="pathway-tag">Business Computing</span>
+      <span class="pathway-tag">Data Science</span>
+      <span class="pathway-tag">Cyber Security</span>
+      <span class="pathway-tag">Software Engineering</span>
+      <span class="pathway-tag">SE + Electronics</span>
+    </div>
+    <button class="btn-start" onclick="startQuiz()">Let's find out →</button>
+  </div>
+
+  <div id="quizArea" class="hidden">
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-info">
+        <span id="progressLabel">Question 1 of 13</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div id="questionContainer"></div>
+    <div class="nav-buttons">
+      <button class="btn btn-back" id="btnBack" onclick="prevQuestion()">← Back</button>
+      <button class="btn btn-next" id="btnNext" onclick="nextQuestion()" disabled>Next →</button>
+      <button class="btn btn-submit hidden" id="btnSubmit" onclick="showResults()" disabled>See my results ✨</button>
+    </div>
+  </div>
+
+  <div id="resultsSection" class="results-section"></div>
+</div>
+
+<script>
+// =====================================================================
+//  ANONYMOUS DATA COLLECTION VIA MICROSOFT FORMS
+// =====================================================================
+//  To collect anonymous responses through your university MS Forms:
+//
+//  STEP 1 — Create a Microsoft Form
+//     Go to https://forms.office.com and create a new form.
+//     Add these 4 questions (all as "Text" type):
+//       Q1: "Current Pathway"
+//       Q2: "Recommended Pathway"
+//       Q3: "Current Pathway Rank"
+//       Q4: "Scores"
+//     (Optional: set "Record name" to OFF under Settings
+//      so it's fully anonymous.)
+//
+//  STEP 2 — Get the pre-fill parameter IDs
+//     a. Open your form in edit mode
+//     b. Click "..." (three dots, top right) → "Get pre-populated link"
+//     c. Type any placeholder into each field (e.g. "test1", "test2", etc.)
+//     d. Click "Get link" and copy it
+//     e. It will look something like:
+//        https://forms.office.com/e/AbCd1234?r8e1f=test1&r2b3a=test2&rf4c7=test3&r9d0e=test4
+//     f. The parts before each "=" sign are your field IDs.
+//        Map them in order below:
+//        - First param  → FIELD_CURRENT_PATHWAY
+//        - Second param → FIELD_RECOMMENDED
+//        - Third param  → FIELD_RANK
+//        - Fourth param → FIELD_SCORES
+//
+//  STEP 3 — Paste your form URL and field IDs below
+// =====================================================================
+
+const MS_FORMS_URL = 'https://forms.office.com/Pages/ResponsePage.aspx?id=_5c8u7URN0uSzxiXsth2a3gDJvWaXlBKnJeFq5_RJd1UMktNQ1BGTjdRWDBaT0k3V044WFA5TkJDMS4u';
+const FIELD_CURRENT_PATHWAY = 're519b2b68c4342f7a3f586f672f73c22';
+const FIELD_RECOMMENDED = 'r4a1af8d82464411eaba89467062bf8b8';
+const FIELD_RANK = 'r3fd4618798484705856774af4837ba1a';
+const FIELD_SCORES = 'rcc335f17f4614fbf8a3040ada8c84328';
+
+// Leave MS_FORMS_URL empty to disable. Quiz works perfectly without it.
+// =====================================================================
+
+const pathways = {
+  CS:  { name: "BSc Computer Science",                short: "Computer Science",         desc: "Broad & flexible with customisable routes — programming, algorithms, web, mobile, AI, security and more. You choose your specialism from a huge range of Year 2/3 options." },
+  AI:  { name: "BSc Artificial Intelligence",          short: "Artificial Intelligence",  desc: "Foundations of AI, prompt engineering, machine learning, deep learning, computer vision and NLP. Logic, statistics and AI ethics with hands-on intelligent system development." },
+  GD:  { name: "BSc Computer Games Development",      short: "Games Development",        desc: "C++ and Unreal Engine focused — game design, game engine architecture, 3D modelling, CG programming, game AI and networking. Creativity meets technical depth." },
+  CC:  { name: "BSc Creative Computing",              short: "Creative Computing",       desc: "Creativity meets code — user-centred design, interactive media, front-end development, 3D experiences and XR. Strong scripting skills with access to the Immersive Development Lab." },
+  BC:  { name: "BSc Business Computing",              short: "Business Computing",       desc: "IT meets business — information systems, data analysis, cloud-driven entrepreneurship, CRM, digital strategy and AI in business decision-making." },
+  DS:  { name: "BSc Data Science & Analytics",         short: "Data Science",             desc: "Statistical modelling, data engineering, visualisation, machine learning, big data analytics and operational research. Heavy maths & stats focus from Year 1." },
+  CSF: { name: "BSc Cyber Security & Forensics",      short: "Cyber Security",           desc: "Network security, ethical hacking, digital forensics, incident response and risk management. NCSC-aligned with a dedicated forensics lab and offensive/defensive tools." },
+  SE:  { name: "BEng Software Engineering",            short: "Software Engineering",     desc: "Professional software design, Agile development, testing, architecture and quality assurance. Emphasis on building reliable, maintainable systems to industry standards." },
+  SEE: { name: "BEng Software Eng. with Electronics", short: "SE + Electronics",         desc: "Software meets hardware — microcontrollers, digital systems, electronics, embedded systems, IoT, robotics and industrial automation." }
+};
+const pathwayKeys = Object.keys(pathways);
+
+// ══════════════════════════════════════════════════════════════════════
+//  QUESTIONS
+//  Design principles:
+//  • Scenario-based and personality-driven — no module names, tools or pathway giveaways
+//  • Each option maps to underlying traits that genuinely differentiate the pathways
+//    based on course aims, content focus and graduate profiles
+//  • Students can't reverse-engineer which answer = which course
+//  • Some options give partial points to 2 pathways where traits overlap
+// ══════════════════════════════════════════════════════════════════════
+
+const questions = [
+  // Q0 — Current pathway (unscored)
+  {
+    isPathwayQuestion: true,
+    text: "Which CSE pathway are you currently enrolled in?",
+    subtext: "This won't affect your score — it's just so we can show you how your current pathway compares to your result.",
+    options: [
+      { label: "BSc Computer Science", pathwayKey: "CS" },
+      { label: "BSc Artificial Intelligence", pathwayKey: "AI" },
+      { label: "BSc Computer Games Development", pathwayKey: "GD" },
+      { label: "BSc Creative Computing", pathwayKey: "CC" },
+      { label: "BSc Business Computing", pathwayKey: "BC" },
+      { label: "BSc Data Science & Analytics", pathwayKey: "DS" },
+      { label: "BSc Cyber Security & Forensics", pathwayKey: "CSF" },
+      { label: "BEng Software Engineering", pathwayKey: "SE" },
+      { label: "BEng Software Engineering with Electronics", pathwayKey: "SEE" }
+    ]
+  },
+
+  // ══════════════════════════════════════════════════════════════════
+  //  SCORING BALANCE — each pathway scores in 7-10 of 12 questions
+  //  Secondary scores reflect genuine overlaps backed by shared modules
+  //  or stated course aims in programme specifications
+  // ══════════════════════════════════════════════════════════════════
+
+  // Q1 — What catches your attention (natural curiosity)
+  {
+    text: "You\u2019re scrolling through the news and one headline makes you stop. Which one?",
+    options: [
+      // AI: "transforming healthcare, finance, transportation" (proforma)
+      { label: "\"New AI can now diagnose diseases more accurately than doctors\"", scores: { AI: 3 } },
+      // CSF: "impact of cyber incidents on businesses, governments, individuals" (proforma)
+      { label: "\"Massive data breach exposes millions \u2014 here\u2019s how the hackers got in\"", scores: { CSF: 3 } },
+      // DS+CS: DS proforma "convert data into valuable insights"; CS has Data Science option theme
+      { label: "\"Hidden patterns in city data could predict where the next pandemic starts\"", scores: { DS: 3, CS: 1 } },
+      // BC: "technical solution to real-world business problems" (proforma)
+      { label: "\"How a small startup used technology to outperform a Fortune 500 company\"", scores: { BC: 3 } },
+      // GD: "expanding and challenging sector with cutting-edge technologies" (proforma)
+      { label: "\"Inside the five-year journey to build the most realistic open-world game ever made\"", scores: { GD: 3 } },
+      // CC+SE: CC proforma "creativity + programming, storytelling, content creation"; SE proforma covers web development
+      { label: "\"This interactive online experience is changing how brands tell stories \u2014 and it\u2019s all built in a browser\"", scores: { CC: 3, SE: 1 } }
+    ]
+  },
+
+  // Q2 — Problem-solving instinct
+  {
+    text: "A friend\u2019s small business website is losing customers. They ask for your help. What\u2019s your first instinct?",
+    options: [
+      // DS: "evidence-based decision making" (proforma)
+      { label: "Look at the visitor data and analytics to find where people are dropping off", scores: { DS: 3 } },
+      // CC: "user-centred software development approach, capture requirements" (proforma)
+      { label: "Watch real people try to use it \u2014 find where they get stuck, then redesign those parts around what users actually need", scores: { CC: 3 } },
+      // CSF+SE: CSF proforma "evaluate and identify risks"; SE proforma "secure and robust software"
+      { label: "Check if it\u2019s been compromised \u2014 maybe customers don\u2019t feel safe entering their details", scores: { CSF: 3, SE: 1 } },
+      // BC: "analyse, design and synthesise digital solutions to business requirements" (proforma)
+      { label: "Understand their business model first \u2014 the tech might be fine but the strategy is wrong", scores: { BC: 3 } },
+      // SE+CS: SE proforma "systematic approach"; CS and SE share Year 1, both cover software lifecycle
+      { label: "Look under the hood \u2014 if the site is slow, buggy or badly built, that\u2019s the real problem", scores: { SE: 3, CS: 1 } },
+      // AI: "develop, implement, and manage intelligent systems" (proforma)
+      { label: "Add smart features \u2014 like personalised recommendations or a chatbot to help visitors", scores: { AI: 3 } }
+    ]
+  },
+
+  // Q3 — What frustrates you about technology
+  {
+    text: "What frustrates you most about technology today?",
+    options: [
+      // SE+CS: SE proforma "creating and maintaining secure and robust software"; CS proforma "all aspects of software lifecycle"
+      { label: "Apps that crash, freeze or break after updates \u2014 why can\u2019t software just work properly?", scores: { SE: 3, CS: 1 } },
+      // CSF: "cyber resilient digital solution, detect and contain cyber-attacks" (proforma)
+      { label: "How much we blindly trust the systems we use every day \u2014 most people have no idea how exposed they really are", scores: { CSF: 3 } },
+      // CC: "user-centred design, HCI, usability testing" (proforma)
+      { label: "Websites and apps that clearly weren\u2019t tested with real people \u2014 nobody checked whether users can actually find what they need", scores: { CC: 3 } },
+      // AI: "transforming nearly every aspect of modern life" (proforma)
+      { label: "How dumb most \\\"smart\\\" technology still is \u2014 we could automate so much more if it was built better", scores: { AI: 3 } },
+      // BC: "provide technical solution to real-world business problems" (proforma)
+      { label: "Organisations wasting money on tech that doesn\u2019t actually solve their real problems", scores: { BC: 3 } },
+      // SEE+GD: SEE proforma "understanding of the physical realities of machines"; GD proforma "cutting-edge technologies"
+      { label: "How fragile and wasteful most devices are \u2014 they should be built to last and designed with real engineering", scores: { SEE: 3, GD: 1 } }
+    ]
+  },
+
+  // Q4 — How they spend free time
+  {
+    text: "It\u2019s a rainy Saturday with nothing planned. What are you most likely doing?",
+    options: [
+      // GD+CC: GD proforma "game design, game technologies"; CC and GD share Game Enterprise module
+      { label: "Playing a game \u2014 and thinking about how they designed the levels and mechanics", scores: { GD: 3, CC: 1 } },
+      // CC: "scripting skills, web and 3D technologies, interactive media prototypes, storytelling" (proforma)
+      { label: "Building a little website or interactive project \u2014 coding something creative that I can show people", scores: { CC: 3 } },
+      // AI+DS: AI proforma "prompt engineering, large language models"; AI and DS share ML modules
+      { label: "Messing around with an AI tool \u2014 seeing what it can and can\u2019t do, trying to break it", scores: { AI: 3, DS: 1 } },
+      // SEE: "practical lab bench prototyping skills, hands-on development" (proforma)
+      { label: "Taking something apart to see how it works, or trying to build something with bits I have lying around", scores: { SEE: 3 } },
+      // CS: "flexibility, build a customised route, wide range of skills" (proforma)
+      { label: "Going down a rabbit hole \u2014 reading about something random and ending up learning three different things", scores: { CS: 3 } },
+      // CSF+BC: CSF proforma "investigative approaches"; BC proforma covers "Information Systems Security" module
+      { label: "Trying an online puzzle, escape room or mystery challenge \u2014 I love figuring things out", scores: { CSF: 3, BC: 1 } }
+    ]
+  },
+
+  // Q5 — Mathematics attitude
+  {
+    text: "Be honest \u2014 how do you feel about mathematics?",
+    options: [
+      // DS: "fundamental principles of mathematics, statistics" (proforma \u2014 maths-heaviest course)
+      { label: "I actually enjoy it, especially when it involves patterns in numbers, probability or statistics", scores: { DS: 3 } },
+      // AI+CS: AI proforma "logic, statistics, algorithms, computational theory"; CS core module "Mathematics for Computing"
+      { label: "I like the logical side \u2014 working through proofs and understanding why things are true", scores: { AI: 2, CS: 2 } },
+      // SEE: "Applied Mathematics" core module (proforma)
+      { label: "I prefer it when it\u2019s practical \u2014 calculating real things like forces, signals or measurements", scores: { SEE: 3 } },
+      // BC: "Business Data Analysis, financial technologies" (proforma)
+      { label: "I\u2019m fine with it when it\u2019s useful \u2014 like budgets, forecasting or understanding business numbers", scores: { BC: 3 } },
+      // GD: "Maths and Physics for Games" core module (proforma)
+      { label: "I like it when I can see the result \u2014 like how maths makes things move, bounce or collide on screen", scores: { GD: 3 } },
+      // CC+SE: CC proforma "mathematical concepts applied to create interactive UI elements"; SE is "learning-through-practice"
+      { label: "I don\u2019t mind it when it makes something interactive \u2014 like animations or movement on screen \u2014 but it\u2019s not what I\u2019d choose to study on its own", scores: { CC: 2, SE: 1 } }
+    ]
+  },
+
+  // Q6 — What kind of impact makes a project meaningful
+  {
+    text: "Imagine you\u2019ve just finished a big project you\u2019re really proud of. What makes it meaningful to you?",
+    options: [
+      // SE+SEE: SE proforma "secure and robust software"; SEE proforma "reliable, sustainable solutions"
+      { label: "It\u2019s built properly \u2014 clean, reliable, and it\u2019ll still work perfectly a year from now", scores: { SE: 3, SEE: 1 } },
+      // CC: "user-centred design, interactive media, usability testing, HCI" (proforma)
+      // +GD secondary: GD proforma "game design" also deeply considers player experience
+      { label: "People love using it \u2014 they find it easy, enjoyable and can\u2019t stop interacting with it", scores: { CC: 3, GD: 1 } },
+      // AI+CS: AI proforma "develop intelligent systems"; CS proforma lists "AI specialist" as graduate role
+      { label: "It does something that wasn\u2019t possible before \u2014 it\u2019s genuinely smart", scores: { AI: 3, CS: 1 } },
+      // DS: "convert data into valuable insights to support decision making" (proforma)
+      { label: "It revealed something nobody knew \u2014 a pattern, a trend, an insight that changed a decision", scores: { DS: 3 } },
+      // CSF: "cyber resilient, detect and contain cyber-attacks before they do damage" (proforma)
+      { label: "It kept people safe \u2014 it stopped something bad from happening or caught someone who caused harm", scores: { CSF: 3 } },
+      // BC: "technical solution to real-world business problems" (proforma)
+      { label: "It made a real difference to an organisation \u2014 saved money, improved a process, helped them grow", scores: { BC: 3 } }
+    ]
+  },
+
+  // Q7 — Superpower question
+  {
+    text: "If you could have one superpower at work, which would you choose?",
+    options: [
+      // DS: "hidden relationships... data into valuable insights" (proforma)
+      // +BC secondary: BC proforma "Business Analytics, Business Process Intelligence"
+      { label: "The ability to look at any pile of messy information and instantly spot the story hidden inside it", scores: { DS: 3, BC: 1 } },
+      // CSF: "evaluate and identify risks and vulnerabilities and formulate countermeasures" (proforma)
+      { label: "The ability to sense when something is wrong \u2014 find the weakness, the lie, the vulnerability", scores: { CSF: 3 } },
+      // AI: "machine learning, automated reasoning, neural networks, generative algorithms" (proforma)
+      { label: "The ability to predict what will happen next based on everything that\u2019s happened before", scores: { AI: 3 } },
+      // CC+GD: CC proforma "user-centred design, HCI, interaction design, storytelling"; GD proforma deeply considers player experience
+      { label: "The ability to instantly understand what people need and create a digital experience that connects with them perfectly", scores: { CC: 3, GD: 1 } },
+      // BC: "alignment between business strategy and technology" (proforma)
+      { label: "The ability to see exactly how technology can transform any business and convince people to do it", scores: { BC: 3 } },
+      // SE+SEE+CS: SE proforma "applying a wide range of technologies"; SEE proforma "design, build and code"; CS proforma "adaptability, strong foundation"
+      { label: "The ability to build anything \u2014 wire it, code it, connect it \u2014 and have it work first time", scores: { SEE: 2, SE: 2, CS: 1 } }
+    ]
+  },
+
+  // Q8 — Dream career (aspirational, exciting roles)
+  {
+    text: "Fast-forward 10 years. Which career would make you jump out of bed every morning?",
+    options: [
+      // SEE: "robotics engineer, development engineer, systems engineer, IoT development engineer" (proforma)
+      { label: "Building the tech behind Formula 1 cars, SpaceX rockets or autonomous drones \u2014 engineering the machines that push what\u2019s physically possible", scores: { SEE: 3 } },
+      // GD+CC: GD proforma "games industry and wider creative industry"; CC proforma "Creative Tech Industry"
+      { label: "Creative director at a major games or entertainment studio \u2014 leading a team that builds worlds millions of players lose themselves in", scores: { GD: 3, CC: 1 } },
+      // AI: "AI-related fields such as data science, software development, research" (proforma)
+      { label: "Working at a place like DeepMind or OpenAI \u2014 building autonomous systems that outperform humans at tasks nobody thought possible", scores: { AI: 3 } },
+      // CSF: "UK government strategic vision, NCSC" (proforma)
+      { label: "Hunting hackers for a government intelligence agency, running a red team that breaks into systems before the real attackers do", scores: { CSF: 3 } },
+      // SE+CS: SE proforma "senior/lead software engineer, systems analyst"; CS proforma "programmer, systems architect"
+      { label: "Lead engineer at a company like Spotify, Tesla or a fast-scaling startup \u2014 architecting systems that handle millions of users without breaking", scores: { SE: 3, CS: 1 } },
+      // DS+BC: DS proforma "businesses and governments"; BC proforma "Business Analytics, digital strategy, fintech"
+      { label: "Using data and algorithms to gain an edge \u2014 in sports analytics, financial trading, or building the next fintech unicorn", scores: { DS: 3, BC: 1 } }
+    ]
+  },
+
+  // Q9 — How they approach learning something new
+  {
+    text: "You need to learn a completely new technology you\u2019ve never used before. How do you approach it?",
+    options: [
+      // CS: "flexibility, build a customised route, wide range of skills" (proforma)
+      { label: "I\u2019d explore multiple tutorials and approaches \u2014 I like to understand the big picture before committing", scores: { CS: 3 } },
+      // SE: "systematic approach, formally design, develop and test" (proforma)
+      { label: "Start with the official documentation and follow it step by step \u2014 I like a structured approach", scores: { SE: 3 } },
+      // CC+GD: CC proforma "scripting, practical experience, web and 3D"; GD proforma "from concept to final implementation"
+      { label: "Jump straight in and try to build something interactive with it \u2014 I learn best by creating", scores: { CC: 2, GD: 2 } },
+      // AI+CSF: AI proforma "problem-solving, testing hypotheses"; CSF proforma "innovative solutions, offensive and defensive"
+      { label: "Experiment \u2014 change things, break things, see what happens. I learn by testing the limits", scores: { AI: 2, CSF: 1 } },
+      // DS+BC: DS proforma "applying taught principles to tasks"; BC proforma "real-world scenarios"
+      { label: "Find examples of what other people have done with it and study their approach", scores: { DS: 2, BC: 1 } },
+      // SEE: "practical lab bench prototyping skills, hands-on development" (proforma)
+      { label: "Get the hardware or setup ready and start tinkering \u2014 I need to get my hands on it", scores: { SEE: 3 } }
+    ]
+  },
+
+  // Q10 — What kind of content they'd create
+  {
+    text: "You\u2019re given \u00a3500 and a weekend to create anything tech-related to show off at a student exhibition. What do you make?",
+    options: [
+      // GD: "full game development experience from concept to final implementation" (proforma)
+      // Less obvious — focuses on the technical challenge of real-time interactive systems, not just "a game"
+      { label: "A real-time interactive experience with physics, AI-driven characters and a scoring system \u2014 something people can\u2019t stop competing on", scores: { GD: 3 } },
+      // CC: "web and 3D technologies, storytelling, content creation, interactive media prototypes, XR" (proforma)
+      { label: "An interactive website or 3D experience people can explore on their phones \u2014 with animations, sound and a storyline", scores: { CC: 3 } },
+      // SEE+SE: SEE proforma "microcontroller project, embedded systems, IoT"; SE proforma "practical skills, tools and techniques"
+      { label: "A physical gadget that does something cool \u2014 lights up, moves, responds to the environment", scores: { SEE: 3, SE: 1 } },
+      // AI+DS: AI proforma "machine learning, computer vision, NLP"; AI and DS share ML modules
+      { label: "Something that shows off intelligence \u2014 a bot that talks, a system that recognises things or predicts outcomes", scores: { AI: 3, DS: 1 } },
+      // DS+CS: DS proforma "visualise data, valuable insights"; CS has Data Science option theme
+      { label: "A live data display \u2014 pulling real-time information and visualising it in a way nobody has seen before", scores: { DS: 3, CS: 1 } },
+      // CSF: "tools and techniques both offensive and defensive" (proforma)
+      // Less obvious — focuses on the detective/forensic angle rather than just "hacking"
+      { label: "A detective-style challenge where visitors have to piece together digital clues to solve a mystery \u2014 and learn something unsettling about their own digital footprint", scores: { CSF: 3 } }
+    ]
+  },
+
+  // Q11 — What online content absorbs them
+  {
+    text: "What kind of YouTube video or online content can you happily watch for hours?",
+    options: [
+      // DS: "collect, store, prepare, analyse and visualise data" (proforma)
+      { label: "Fascinating data visualisations, number breakdowns or \\\"the statistics behind...\\\" explainer videos", scores: { DS: 3 } },
+      // CC+GD: CC proforma "scripting, web and 3D, interactive media, content creation"; GD proforma "game design, 3D modelling"
+      { label: "Creative coding tutorials, web development builds or behind-the-scenes of how interactive digital experiences are made", scores: { CC: 2, GD: 2 } },
+      // BC: "cloud-driven entrepreneurship, digital strategy, AI in business" (proforma)
+      { label: "Startup stories, business breakdowns or \\\"how this company went from zero to billions\\\"", scores: { BC: 3 } },
+      // SEE: "hardware engineering, microcontrollers, real-time solutions" (proforma)
+      { label: "Engineering teardowns, maker projects or \\\"how it\u2019s made\\\" factory videos \u2014 anything showing how things are built", scores: { SEE: 3 } },
+      // AI+CS: AI proforma "theoretical and practical aspects of AI"; CS proforma "wide range of areas, AI specialist"
+      { label: "Deep dives into how emerging technologies work \u2014 the science and theory behind the hype", scores: { AI: 2, CS: 2 } },
+      // CSF+SE: CSF proforma "investigative approaches, offensive and defensive"; SE covers Cyber Security at L6
+      { label: "True crime investigations, hacking stories or \\\"how they caught the...\\\" documentary-style content", scores: { CSF: 3, SE: 1 } }
+    ]
+  },
+
+  // Q12 — How they see themselves (self-identity)
+  {
+    text: "Which of these descriptions fits you best? Be honest, not aspirational!",
+    options: [
+      // CS: "flexibility, customised route, wide range of skills, one or more specialisms" (proforma)
+      { label: "I\u2019m curious about lots of things \u2014 I\u2019d rather be good at many areas than an expert in just one", scores: { CS: 3 } },
+      // AI+DS: AI proforma "intelligent systems, automated reasoning"; DS and AI share ML/data analysis
+      { label: "I\u2019m constantly thinking about how things could be smarter or more automated", scores: { AI: 3, DS: 1 } },
+      // CC: "user-centred design, HCI, usability testing, interactive media" (proforma)
+      { label: "I always think about how people will experience something \u2014 I notice when apps are frustrating or websites don\u2019t make sense to use", scores: { CC: 3 } },
+      // CSF: "identify risks and vulnerabilities, investigate, defensive/offensive" (proforma)
+      { label: "I\u2019m naturally suspicious \u2014 I notice when things seem off and I always check the fine print", scores: { CSF: 3 } },
+      // BC: "business problems, strategy, digital transformation" (proforma)
+      { label: "I think about the bigger picture \u2014 what\u2019s the point of building something if there\u2019s no real need for it?", scores: { BC: 3 } },
+      // SE+SEE+GD: SE proforma "creating software"; SEE proforma "design, build and code hardware+software"; GD proforma "solid background in software engineering"
+      { label: "I\u2019m a builder \u2014 whether it\u2019s code, circuits or furniture, I love making things that work", scores: { SE: 2, SEE: 2, GD: 1 } }
+    ]
+  }
+];
+
+const totalQuestions = questions.length;
+let currentQ = 0;
+let answers = new Array(totalQuestions).fill(null);
+let currentPathwayKey = null;
+
+function startQuiz() {
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('quizArea').classList.remove('hidden');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const letters = ['A','B','C','D','E','F','G','H','I'];
+  let html = `<div class="question-card">
+    <div class="q-number">Question ${currentQ + 1} of ${totalQuestions}</div>
+    <div class="q-text">${q.text}</div>`;
+  if (q.subtext) html += `<div class="q-subtext">${q.subtext}</div>`;
+  html += `<div class="options">`;
+  q.options.forEach((opt, i) => {
+    const sel = answers[currentQ] === i ? 'selected' : '';
+    html += `<button class="option-btn ${sel}" onclick="selectOption(${i})">
+      <span class="option-letter">${letters[i]}</span><span>${opt.label}</span>
+    </button>`;
+  });
+  html += `</div></div>`;
+  document.getElementById('questionContainer').innerHTML = html;
+  const progress = (currentQ / totalQuestions) * 100;
+  document.getElementById('progressFill').style.width = progress + '%';
+  document.getElementById('progressLabel').textContent = `Question ${currentQ + 1} of ${totalQuestions}`;
+  document.getElementById('progressPct').textContent = Math.round(progress) + '%';
+  document.getElementById('btnBack').style.visibility = currentQ === 0 ? 'hidden' : 'visible';
+  const isLast = currentQ === totalQuestions - 1;
+  document.getElementById('btnNext').classList.toggle('hidden', isLast);
+  document.getElementById('btnSubmit').classList.toggle('hidden', !isLast);
+  const hasAnswer = answers[currentQ] !== null;
+  document.getElementById('btnNext').disabled = !hasAnswer;
+  document.getElementById('btnSubmit').disabled = !hasAnswer;
+}
+
+function selectOption(idx) {
+  answers[currentQ] = idx;
+  if (questions[currentQ].isPathwayQuestion) currentPathwayKey = questions[currentQ].options[idx].pathwayKey;
+  renderQuestion();
+}
+function nextQuestion() { if (currentQ < totalQuestions - 1) { currentQ++; renderQuestion(); window.scrollTo({top:0,behavior:'smooth'}); } }
+function prevQuestion() { if (currentQ > 0) { currentQ--; renderQuestion(); } }
+
+function calculateScores() {
+  const scores = {};
+  pathwayKeys.forEach(k => scores[k] = 0);
+  answers.forEach((ansIdx, qIdx) => {
+    if (ansIdx !== null && !questions[qIdx].isPathwayQuestion) {
+      const opt = questions[qIdx].options[ansIdx];
+      if (opt.scores) Object.entries(opt.scores).forEach(([pw, pts]) => { scores[pw] += pts; });
+    }
+  });
+  const results = Object.entries(scores)
+    .map(([key, score]) => ({ key, name: pathways[key].name, short: pathways[key].short, desc: pathways[key].desc, score }))
+    .sort((a, b) => b.score - a.score);
+  const topScore = results[0].score;
+  results.forEach(r => {
+    r.percent = topScore > 0 ? Math.round((r.score / topScore) * 95) : 0;
+    r.percent = Math.max(r.percent, 5);
+  });
+  return results;
+}
+
+function showResults() {
+  const results = calculateScores();
+  document.getElementById('quizArea').classList.add('hidden');
+  const currentPw = pathways[currentPathwayKey];
+  const currentRank = results.findIndex(r => r.key === currentPathwayKey) + 1;
+  const isGoodFit = currentRank <= 3;
+
+  let html = `<div class="results-header">
+    <h2>Your pathway ranking</h2>
+    <p>Based on your interests, instincts and ambitions — here's how each CSE pathway matches you, from best fit at the top.</p>
+  </div>
+  <div class="current-pathway-banner">
+    <div class="cpb-label">Your current pathway</div>
+    <div class="cpb-name">${currentPw.name}</div>
+    <div class="cpb-match ${isGoodFit ? 'great' : 'consider'}">
+      ${isGoodFit ? `✓ Ranked #${currentRank} — looks like a great fit for you!` : `Ranked #${currentRank} out of 9 — you might want to explore other options`}
+    </div>
+  </div>`;
+
+  results.forEach((r, i) => {
+    const isTop = i === 0, isCurrent = r.key === currentPathwayKey, delay = i * 0.07;
+    html += `<div class="result-card ${isTop?'top-match':''} ${isCurrent?'is-current':''}" style="animation-delay:${delay}s">
+      ${isTop ? '<div style="width:100%"><span class="top-match-label">⭐ Best match</span></div>' : ''}
+      <div class="result-rank">${i+1}</div>
+      <div class="result-info">
+        <div class="result-name">${r.name}${isCurrent ? '<span class="result-current-tag">Your current</span>' : ''}</div>
+        <div class="result-desc">${r.desc}</div>
+      </div>
+      <div class="result-score-wrap">
+        <div class="result-percent">${r.percent}%</div>
+        <div class="result-bar-mini"><div class="result-bar-fill" style="width:0%" data-width="${r.percent}%"></div></div>
+      </div>
+    </div>`;
+  });
+
+  if (MS_FORMS_URL) {
+    html += `<div class="submit-box" id="submitBox">
+      <h3>📊 Help us improve</h3>
+      <p>Submit your results anonymously so your course team can see which pathways students are best matched with. <strong>No personal data is collected</strong> — just your current pathway, your scores and the recommended match.</p>
+      <button class="btn-anon-submit" id="btnAnonSubmit" onclick="submitAnonymously()">Submit my results anonymously</button>
+      <div class="submit-status" id="submitStatus"></div>
+    </div>`;
+  }
+
+  html += `<div class="results-footer">
+    <p>This quiz is a guide, not a definitive answer! If you're surprised by your results or thinking about a change, speak to your <strong>course leader</strong> or <strong>personal tutor</strong> to discuss your options.</p>
+    <button class="btn-restart" onclick="restartQuiz()">↻ Take the quiz again</button>
+  </div>`;
+
+  const section = document.getElementById('resultsSection');
+  section.innerHTML = html; section.style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(() => { document.querySelectorAll('.result-bar-fill').forEach(b => { b.style.width = b.dataset.width; }); }, 300);
+}
+
+function submitAnonymously() {
+  const results = calculateScores();
+  const btn = document.getElementById('btnAnonSubmit');
+  const status = document.getElementById('submitStatus');
+  btn.disabled = true; btn.textContent = 'Opening form...';
+
+  const currentPw = pathways[currentPathwayKey].short;
+  const recommendedPw = results[0].short;
+  const rank = results.findIndex(r => r.key === currentPathwayKey) + 1;
+  const scoresStr = results.map(r => `${r.short}: ${r.percent}%`).join(', ');
+
+  // Build pre-filled MS Forms URL
+  const params = new URLSearchParams();
+  if (FIELD_CURRENT_PATHWAY) params.set(FIELD_CURRENT_PATHWAY, currentPw);
+  if (FIELD_RECOMMENDED) params.set(FIELD_RECOMMENDED, recommendedPw);
+  if (FIELD_RANK) params.set(FIELD_RANK, String(rank));
+  if (FIELD_SCORES) params.set(FIELD_SCORES, scoresStr);
+
+  const separator = MS_FORMS_URL.includes('?') ? '&' : '?';
+  const formUrl = MS_FORMS_URL + separator + params.toString();
+
+  window.open(formUrl, '_blank');
+
+  btn.textContent = '✓ Form opened';
+  status.textContent = 'A Microsoft Form has opened in a new tab — just click Submit there to complete. Thank you!';
+  status.className = 'submit-status success';
+}
+
+function restartQuiz() {
+  currentQ = 0; answers = new Array(totalQuestions).fill(null); currentPathwayKey = null;
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('resultsSection').innerHTML = '';
+  document.getElementById('intro').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+window.addEventListener('scroll', () => {
+  const pw = document.getElementById('progressWrap');
+  if (pw) pw.classList.toggle('scrolled', window.scrollY > 40);
+});
+</script>
+</body>
+</html>
