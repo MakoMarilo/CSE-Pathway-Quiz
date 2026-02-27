@@ -76,7 +76,7 @@
   .cpb-match.consider { background: #FFF3E0; color: var(--amber); }
   .result-card { background: var(--white); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: 20px; transition: all 0.3s ease; animation: fadeUp 0.5s ease both; }
   .result-card:hover { box-shadow: var(--shadow-md); transform: translateX(4px); }
-  .result-card.top-match { background: linear-gradient(135deg, var(--teal-light), #E8F8F5); border: 2px solid var(--teal); box-shadow: var(--shadow-md); padding: 28px 28px; }
+  .result-card.top-match { background: linear-gradient(135deg, var(--teal-light), #E8F8F5); border: 2px solid var(--teal); box-shadow: var(--shadow-md); padding: 28px 28px; flex-wrap: wrap; }
   .result-card.is-current { border-left: 4px solid var(--teal); }
   .result-rank { flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
   .result-card.top-match .result-rank { background: var(--teal); color: white; width: 52px; height: 52px; font-size: 22px; border-radius: 14px; }
@@ -94,15 +94,19 @@
   .result-bar-fill { height: 100%; background: var(--teal); border-radius: 100px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
   .result-card:not(.top-match) .result-bar-fill { background: var(--teal-mid); }
   .top-match-label { display: inline-block; background: var(--teal); color: white; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 100px; margin-bottom: 8px; }
-  .submit-box { background: var(--white); border-radius: var(--radius); padding: 28px; margin-top: 32px; box-shadow: var(--shadow-sm); text-align: center; border: 2px dashed var(--teal-mid); }
-  .submit-box h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-  .submit-box p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
-  .btn-anon-submit { background: var(--teal); color: white; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; padding: 14px 32px; cursor: pointer; transition: all 0.25s ease; }
-  .btn-anon-submit:hover { background: var(--teal-dark); transform: translateY(-1px); }
-  .btn-anon-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .submit-status { margin-top: 12px; font-size: 14px; font-weight: 500; min-height: 20px; }
-  .submit-status.success { color: var(--green); }
-  .submit-status.error { color: var(--amber); }
+  .form-gate { animation: fadeUp 0.5s ease both; }
+  .form-gate-card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-md); padding: 36px 28px; text-align: center; border: 1px solid rgba(0,0,0,0.04); }
+  .form-gate-card h2 { font-family: 'Fraunces', serif; font-size: clamp(22px, 4.5vw, 32px); font-weight: 700; margin-bottom: 10px; color: var(--charcoal); }
+  .form-gate-card p { font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 520px; margin: 0 auto 24px; }
+  .form-gate-card .privacy-note { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .form-embed-wrap { border-radius: 12px; overflow: hidden; border: 1px solid var(--teal-mid); background: #fafafa; }
+  .form-embed-wrap iframe { width: 100%; height: 520px; border: none; display: block; }
+  .form-gate-footer { margin-top: 24px; text-align: center; }
+  .form-gate-footer p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+  .btn-show-results { background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: white; font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 600; padding: 18px 48px; border: none; border-radius: 14px; cursor: pointer; transition: all 0.3s ease; }
+  .btn-show-results:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .form-fallback { margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .form-fallback a { color: var(--teal); font-weight: 600; text-decoration: underline; }
   .results-footer { text-align: center; margin-top: 24px; padding: 32px; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
   .results-footer p { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
   .btn-restart { background: var(--light-bg); color: var(--teal-dark); border: 2px solid var(--teal-mid); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 10px; cursor: pointer; transition: all 0.25s ease; }
@@ -563,8 +567,57 @@ function calculateScores() {
 }
 
 function showResults() {
-  const results = calculateScores();
   document.getElementById('quizArea').classList.add('hidden');
+
+  if (MS_FORMS_URL) {
+    // GATE: Show the MS Form first, results after
+    showFormGate();
+  } else {
+    // No form configured — show results directly
+    revealResults();
+  }
+}
+
+function showFormGate() {
+  const results = calculateScores();
+  const currentPw = pathways[currentPathwayKey].short;
+  const recommendedPw = results[0].short;
+  const rank = results.findIndex(r => r.key === currentPathwayKey) + 1;
+  const scoresStr = results.map(r => `${r.short}: ${r.percent}%`).join(', ');
+
+  // Build pre-filled MS Forms URL
+  const params = new URLSearchParams();
+  if (FIELD_CURRENT_PATHWAY) params.set(FIELD_CURRENT_PATHWAY, currentPw);
+  if (FIELD_RECOMMENDED) params.set(FIELD_RECOMMENDED, recommendedPw);
+  if (FIELD_RANK) params.set(FIELD_RANK, String(rank));
+  if (FIELD_SCORES) params.set(FIELD_SCORES, scoresStr);
+
+  const separator = MS_FORMS_URL.includes('?') ? '&' : '?';
+  const formUrl = MS_FORMS_URL + separator + params.toString();
+
+  const section = document.getElementById('resultsSection');
+  section.innerHTML = `
+    <div class="form-gate">
+      <div class="form-gate-card">
+        <h2>Almost there! 🎉</h2>
+        <p>Your results are ready. Before we reveal them, please submit the short form below — it takes one tap and helps your course team understand which pathways students are best matched with.</p>
+        <p class="privacy-note">🔒 <strong>No personal data is collected</strong> — just your pathway match and scores.</p>
+        <div class="form-embed-wrap">
+          <iframe src="${formUrl}&embed=true" title="Submit results anonymously" allowfullscreen></iframe>
+        </div>
+        <div class="form-fallback">If the form doesn't load, <a href="${formUrl}" target="_blank" rel="noopener">open it here</a>.</div>
+      </div>
+      <div class="form-gate-footer">
+        <p>👆 Hit <strong>Submit</strong> in the form above, then tap the button below.</p>
+        <button class="btn-show-results" onclick="revealResults()">Show my results ✨</button>
+      </div>
+    </div>`;
+  section.style.display = 'block';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function revealResults() {
+  const results = calculateScores();
   const currentPw = pathways[currentPathwayKey];
   const currentRank = results.findIndex(r => r.key === currentPathwayKey) + 1;
   const isGoodFit = currentRank <= 3;
@@ -597,15 +650,6 @@ function showResults() {
     </div>`;
   });
 
-  if (MS_FORMS_URL) {
-    html += `<div class="submit-box" id="submitBox">
-      <h3>📊 Help us improve</h3>
-      <p>Submit your results anonymously so your course team can see which pathways students are best matched with. <strong>No personal data is collected</strong> — just your current pathway, your scores and the recommended match.</p>
-      <button class="btn-anon-submit" id="btnAnonSubmit" onclick="submitAnonymously()">Submit my results anonymously</button>
-      <div class="submit-status" id="submitStatus"></div>
-    </div>`;
-  }
-
   html += `<div class="results-footer">
     <p>This quiz is a guide, not a definitive answer! If you're surprised by your results or thinking about a change, speak to your <strong>course leader</strong> or <strong>personal tutor</strong> to discuss your options.</p>
     <button class="btn-restart" onclick="restartQuiz()">↻ Take the quiz again</button>
@@ -615,34 +659,6 @@ function showResults() {
   section.innerHTML = html; section.style.display = 'block';
   window.scrollTo({top:0,behavior:'smooth'});
   setTimeout(() => { document.querySelectorAll('.result-bar-fill').forEach(b => { b.style.width = b.dataset.width; }); }, 300);
-}
-
-function submitAnonymously() {
-  const results = calculateScores();
-  const btn = document.getElementById('btnAnonSubmit');
-  const status = document.getElementById('submitStatus');
-  btn.disabled = true; btn.textContent = 'Opening form...';
-
-  const currentPw = pathways[currentPathwayKey].short;
-  const recommendedPw = results[0].short;
-  const rank = results.findIndex(r => r.key === currentPathwayKey) + 1;
-  const scoresStr = results.map(r => `${r.short}: ${r.percent}%`).join(', ');
-
-  // Build pre-filled MS Forms URL
-  const params = new URLSearchParams();
-  if (FIELD_CURRENT_PATHWAY) params.set(FIELD_CURRENT_PATHWAY, currentPw);
-  if (FIELD_RECOMMENDED) params.set(FIELD_RECOMMENDED, recommendedPw);
-  if (FIELD_RANK) params.set(FIELD_RANK, String(rank));
-  if (FIELD_SCORES) params.set(FIELD_SCORES, scoresStr);
-
-  const separator = MS_FORMS_URL.includes('?') ? '&' : '?';
-  const formUrl = MS_FORMS_URL + separator + params.toString();
-
-  window.open(formUrl, '_blank');
-
-  btn.textContent = '✓ Form opened';
-  status.textContent = 'A Microsoft Form has opened in a new tab — just click Submit there to complete. Thank you!';
-  status.className = 'submit-status success';
 }
 
 function restartQuiz() {
